@@ -30,11 +30,11 @@
   .cube{
     width:var(--s);height:var(--s);position:relative;flex:none;
     transform-style:preserve-3d;
+    -webkit-transform-style:preserve-3d;
     transition:transform 1s cubic-bezier(.8,0,.2,1);
-    transition-delay:calc(var(--i) * 110ms);
+    -webkit-transition:-webkit-transform 1s cubic-bezier(.8,0,.2,1);
+    transform:rotateX(0deg);
   }
-  .cube.down{transform:rotateX(calc(var(--turn,0) * -90deg));}
-  .cube.up  {transform:rotateX(calc(var(--turn,0) *  90deg));}
 
   .cube.light{--blk:var(--a); --ltr:var(--b); --blk2:var(--b); --ltr2:var(--a);}
   .cube.dark {--blk:var(--b); --ltr:var(--a); --blk2:var(--a); --ltr2:var(--b);}
@@ -62,7 +62,7 @@
   footer a{color:inherit;text-decoration:none;border-bottom:2px solid currentColor}
   footer a:focus-visible{outline:2px solid currentColor;outline-offset:3px}
 
-  @media (prefers-reduced-motion: reduce){.cube{transition:none}}
+  @media (prefers-reduced-motion: reduce){.cube{transition-duration:.01s}}
 </style>
 </head>
 <body>
@@ -88,8 +88,10 @@
   const glyph = ch => ch === 'I' ? '<div class="i"></div>' : `<span>${ch}</span>`;
   spec.forEach(([a,b,dir,col,i]) => {
     const c = document.createElement('div');
-    c.className = `cube ${dir} ${col}`;
-    c.style.setProperty('--i', i);
+    c.className = `cube ${col}`;
+    c.dataset.dir = dir === 'down' ? -1 : 1;
+    c.style.transitionDelay = (i * 110) + 'ms';
+    c.style.webkitTransitionDelay = (i * 110) + 'ms';
     c.innerHTML = `
       <div class="face front">${glyph(a)}</div>
       <div class="face top">${glyph(b)}</div>
@@ -97,7 +99,7 @@
       <div class="face bottom">${glyph(b)}</div>`;
     word.appendChild(c);
   });
-  const cubes = [...word.children];
+  const cubes = Array.from(word.children);
 
   function size(){
     const s = Math.floor(Math.min(160, Math.max(40, window.innerWidth * 0.76 / 6)));
@@ -106,8 +108,14 @@
   size(); addEventListener('resize', size);
 
   let turn = 0;
-  const roll = () => { turn++; cubes.forEach(c => c.style.setProperty('--turn', turn)); };
-  if(!matchMedia('(prefers-reduced-motion: reduce)').matches) setInterval(roll, 3000);
+  const roll = () => {
+    turn++;
+    cubes.forEach(c => {
+      const t = `rotateX(${turn * c.dataset.dir * 90}deg)`;
+      c.style.transform = t; c.style.webkitTransform = t;
+    });
+  };
+  setInterval(roll, 3000);
   word.addEventListener('click', roll);
 </script>
 </body>
